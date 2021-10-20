@@ -1,0 +1,33 @@
+apiVersion: skaffold/v2beta5
+kind: Config
+build:
+  tagPolicy:
+    dateTime:
+      format: "2006-01-02_15-04-05.999_MST"
+      timezone: "Local"
+  artifacts:
+  - image: rp-crawler # 1. 이미지명
+    docker:
+      network: host
+    # 싱크 사용 안함, 이미지 빌드가 느리다면 개발 환경 분리 & 오토 리로더 활성화 후 사용
+    # sync:
+    #   manual:
+    #   - src: 'src/**/*.*'
+    #     dest: "/src/"
+    #     strip: "src/"
+  local:
+    push: false
+    useBuildkit: true
+deploy:
+  helm:
+    releases:
+    - name: rp-crawler-release # Local helm 릴리즈 명 (딱히 규칙 없음, 다른 프로젝트와 겹치지만 않도록)
+      chartPath: k8s/
+      artifactOverrides:
+        container.image: rp-crawler # 1과 통일할 것
+      setValueTemplates:
+        imageConfig.pullPolicy: IfNotPresent
+        replicas: 1
+    flags:
+      upgrade:
+        - --install
